@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+# https://github.com/BohdanNovikov0207/Orehum-Project/blob/master/Resources/Locale/ru-RU/_Orehum/contractors/lifepath.ftl
+
 import sys
 import json
 import datetime
@@ -26,12 +28,15 @@ db_database: str = "ss14"
 db_host: str = "localhost"
 db_port: int = 5432
 db = None
-jobs = None
+
+jobs = None # ключ джобки к переведенной джобке
+species = None # ключ расы к переведенной расе
+sexes = None
 
 command_run_error = "Произошла ошибка при выполнении команды."
 
 async def main(args):
-    global token, db_user, db_password, db_database, db_host, db_port, db, jobs
+    global token, db_user, db_password, db_database, db_host, db_port, db, jobs, species, sexes
 
     try:
         with open("bot.json", "r", encoding="utf-8") as file:
@@ -65,11 +70,22 @@ async def main(args):
 
     print("Connected to db!")
 
-    jobs = await load_jobs("https://raw.githubusercontent.com/BohdanNovikov0207/Orehum-Project/refs/heads/master/Resources/Locale/ru-RU/job/job-names.ftl")
+    jobs = await load_ftl("https://raw.githubusercontent.com/BohdanNovikov0207/Orehum-Project/refs/heads/master/Resources/Locale/ru-RU/job/job-names.ftl")
     jobs["Overall"] = "Общее"
     jobs["Admin"] = "Админ"
     print("Jobs localization loaded")
-
+    species = await load_ftl("https://raw.githubusercontent.com/BohdanNovikov0207/Orehum-Project/refs/heads/master/Resources/Locale/ru-RU/species/species.ftl")
+    species["species-name-ipc"] = "КПБ"
+    species["species-name-thaven"] = "Тавен"
+    species["species-name-tajaran"] = "Таяр"
+    species["species-name-felinid"] = "Фелинид"
+    print("Species localization loaded")
+    sexes = {}
+    sexes["male"] = "Мужской"
+    sexes["female"] = "Женский"
+    sexes["unsexed"] = "Бесполый"
+    print("Sexes localization loaded")
+    
     try:
         await bot.start(token)
     except (KeyboardInterrupt, asyncio.CancelledError):
@@ -109,8 +125,7 @@ async def find(ctx, *, text: str):
 		msg += "```"
 		await ctx.send(msg)
 	except Exception as e:
-		print(e)
-		await ctx.send(command_run_error)
+		await error(ctx, e)
         
 @bot.command(name="playtime")
 async def playtime(ctx, *, text: str):
@@ -137,8 +152,7 @@ async def playtime(ctx, *, text: str):
 
         await ctx.send(embed=embed)
     except Exception as e:
-        print(e)
-        await ctx.send(command_run_error)
+        await error(ctx, e)
 
 @bot.command(name="status")
 async def status(ctx):
@@ -159,8 +173,7 @@ async def status(ctx):
 
         await message.edit(embed=embed, content="")
     except Exception as e:
-        print(e)
-        await ctx.send(command_run_error)
+        await error(ctx, e)
 
 @bot.command(name="characters")
 async def characters(ctx, *, text: str):
@@ -183,15 +196,14 @@ async def characters(ctx, *, text: str):
                 title="",
                 color=discord.Color.from_str(row['skin_color'][:7])
             )
-            msg = f"Раса: {row['species']}\nВозраст: {row['age']}\nПол: {row['sex']}\nЖизненный путь: {row['lifepath']}\nНациональность: {row['nationality']}\n\n{row['flavor_text']}"
+            msg = f"Раса: {get_specie_name(row['species'])}\nВозраст: {row['age']}\nПол: {get_sex_name(row['sex'])}\nЖизненный путь: {row['lifepath']}\nНациональность: {row['nationality']}\n\n{row['flavor_text']}"
             if selected == row['slot']:
                 msg = "\n**Выбранный персонаж**\n\n" + msg
             embed.add_field(name=row['char_name'], value=msg)
             embeds.insert(0, embed)
         await ctx.send(embeds=embeds)
     except Exception as e:
-        print(e)
-        await ctx.send(command_run_error)
+        await error(ctx, e)
 
 def format_timedelta(td: datetime.timedelta) -> str:
     total_seconds = int(td.total_seconds())
@@ -213,8 +225,14 @@ def format_timedelta(td: datetime.timedelta) -> str:
 def get_job_name(job_id: str) -> str:
     return jobs.get(job_id, job_id)
 
-async def load_jobs(url: str) -> dict[str, str]:
-    job_names = {}
+def get_specie_name(spec_id: str) -> str:
+    return species.get("species-name-"+spec_id.lower(), spec_id)
+
+def get_sex_name(sex: str) -> str:
+    return sexes.get(sex.lower(), sex)
+
+async def load_ftl(url: str) -> dict[str, str]:
+    constr = {}
 
     connector = aiohttp.TCPConnector(family=socket.AF_INET) # IPv4 only
     async with aiohttp.ClientSession(connector=connector) as session:
@@ -229,9 +247,9 @@ async def load_jobs(url: str) -> dict[str, str]:
             continue
         if "=" in line:
             key, val = line.split("=", 1)
-            job_names[key.strip()] = val.strip().strip('"')
+            constr[key.strip()] = val.strip().strip('"')
 
-    return job_names
+    return constr
 
 async def get_status():
     url = "http://46.149.69.119:10046/status"
@@ -239,6 +257,10 @@ async def get_status():
         async with session.get(url) as resp:
             data = await resp.json()
             return data
+
+async def error(ctx, error: Exception):
+    print("Error: "+error)
+    await ctx.send(command_run_error)
 
 if __name__ == "__main__":
     asyncio.run(main(sys.argv[1:]))
