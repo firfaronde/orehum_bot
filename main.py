@@ -181,7 +181,7 @@ async def characters(ctx, *, text: str):
                 title="",
                 color=discord.Color.from_str(row['skin_color'][:7])
             )
-            msg = f"Возраст: {row['age']}\nПол: {row['sex']}\n\n{row['flavor_text']}"
+            msg = f"Возраст: {row['age']}\nПол: {row['sex']}\nЖизненный путь: {row['lifepath']}\nНациональность: {row['nationality']}\n\n{row['flavor_text']}"
             if selected == row['slot']:
                 msg = "\n**Выбранный персонаж**\n\n" + msg
             embed.add_field(name=row['char_name'], value=msg)
