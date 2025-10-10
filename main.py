@@ -66,6 +66,8 @@ async def main(args):
     print("Connected to db!")
 
     jobs = await load_jobs("https://raw.githubusercontent.com/BohdanNovikov0207/Orehum-Project/refs/heads/master/Resources/Locale/ru-RU/job/job-names.ftl")
+    jobs["Overall"] = "Общее"
+    jobs["Admin"] = "Админ"
     print("Jobs localization loaded")
 
     try:
@@ -209,7 +211,7 @@ def format_timedelta(td: datetime.timedelta) -> str:
     return " ".join(parts) if parts else "0 м"
 
 def get_job_name(job_id: str) -> str:
-    return jobs.get(job_id, job_id.replace("Overall", "Общее"))
+    return jobs.get(job_id, job_id)
 
 async def load_jobs(url: str) -> dict[str, str]:
     job_names = {}
