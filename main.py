@@ -81,7 +81,7 @@ async def main(args):
     await localization.load()
 
     asyncio.create_task(timed_task())
-    
+    print("Start complete")
     try:
         await bot.start(token)
     except (KeyboardInterrupt, asyncio.CancelledError):
