@@ -2,16 +2,15 @@
 
 import sys
 import json
-import datetime
 
 import discord
 from discord import app_commands
 import asyncio
 import asyncpg
-import aiohttp
 from discord.ext import commands
 
 import localization
+import utils
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -122,7 +121,7 @@ async def playtime(ctx, *, text: str = commands.parameter(description="Сике�
         )
         msg = ""
         for row in rows:
-            msg += f"**{localization.get_job_name(row['tracker'])}** {format_timedelta(row['time_spent'])}\n"
+            msg += f"**{localization.get_job_name(row['tracker'])}** {utils.format_timedelta(row['time_spent'])}\n"
         
         embed.add_field(name=text, value=msg)
 
@@ -137,7 +136,7 @@ async def status(ctx):
     """
     try:
         message = await ctx.send("Выполнение...")
-        data = await get_status()
+        data = await utils.get_status()
         embed = discord.Embed(
             title="",
             color=discord.Color.green()
@@ -180,30 +179,6 @@ async def characters(ctx, *, text: str = commands.parameter(description="Сик�
         await ctx.send(embeds=embeds)
     except Exception as e:
         await error(ctx, e)
-
-def format_timedelta(td: datetime.timedelta) -> str:
-    total_seconds = int(td.total_seconds())
-
-    days = total_seconds // 86400
-    hours = (total_seconds % 86400) // 3600
-    minutes = (total_seconds % 3600) // 60
-
-    parts = []
-    if days > 0:
-        parts.append(f"{days} д")
-    if hours > 0:
-        parts.append(f"{hours} ч")
-    if minutes > 0:
-        parts.append(f"{minutes} м")
-
-    return " ".join(parts) if parts else "0 м"
-
-async def get_status():
-    url = "http://46.149.69.119:10046/status"
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as resp:
-            data = await resp.json()
-            return data
 
 async def error(ctx, error: Exception):
     print("Error: " + str(error))
