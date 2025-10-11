@@ -87,7 +87,7 @@ async def find(ctx, *, text: str = commands.parameter(description="Сикей и
 	"""
 	pattern = f"%{text}%"
 	try:
-		rows = await db.fetch(
+		rows = await fetch(
             "SELECT * FROM player WHERE last_seen_user_name ILIKE $1 LIMIT 10",
             pattern
         )
@@ -108,7 +108,7 @@ async def playtime(ctx, *, text: str = commands.parameter(description="Сике�
     Посмотреть наигранное время игрока
     """
     try:
-        rows = await db.fetch(
+        rows = await fetch(
             "SELECT pt.* FROM player p JOIN play_time pt ON pt.player_id = p.user_id WHERE p.last_seen_user_name = $1 ORDER BY pt.time_spent DESC LIMIT 10",
             text
         )
@@ -156,11 +156,11 @@ async def characters(ctx, *, text: str = commands.parameter(description="Сик�
     Посмотреть 25 персонажей игрока
     """
     try:
-        rows = await db.fetch("SELECT pr.* FROM profile pr JOIN preference pref ON pr.preference_id = pref.preference_id JOIN player pl ON pref.user_id = pl.user_id WHERE pl.last_seen_user_name = $1 ORDER BY pr.char_name DESC;", text)
+        rows = await fetch("SELECT pr.* FROM profile pr JOIN preference pref ON pr.preference_id = pref.preference_id JOIN player pl ON pref.user_id = pl.user_id WHERE pl.last_seen_user_name = $1 ORDER BY pr.char_name DESC;", text)
         if not rows:
             await ctx.send("Игрок не найден!")
             return
-        rows2 = await db.fetch("SELECT pref.selected_character_slot, pref.* FROM preference pref JOIN player pl ON pref.user_id = pl.user_id WHERE pl.last_seen_user_name = $1;", text)
+        rows2 = await fetch("SELECT pref.selected_character_slot, pref.* FROM preference pref JOIN player pl ON pref.user_id = pl.user_id WHERE pl.last_seen_user_name = $1;", text)
         if not rows2:
             await ctx.send("Выбранный персонаж игрока не найден...")
             return
@@ -192,6 +192,19 @@ async def on_ready():
     # guild = discord.Object(1399033645880180756)
     # await bot.tree.sync(guild=guild)
     print(f"We have logged in as {bot.user}")
+
+async def fetch(query: str, *args):
+    global db
+    try:
+        return await db.fetch(query, *args)
+    except (asyncpg.exceptions.ConnectionDoesNotExistError, asyncpg.exceptions.InterfaceError):
+        db.close()
+        db = await asyncpg.connect(
+            user=db_user, password=db_password,
+            database=db_database, host=db_host, port=db_port
+        )
+        return await db.fetch(query, *args)
+
 
 if __name__ == "__main__":
     asyncio.run(main(sys.argv[1:]))
