@@ -31,6 +31,17 @@ db = None
 
 command_run_error = "Произошла ошибка при выполнении команды."
 
+async def timed_task():
+    while True:
+        try:
+            if bot is not None:
+                data = await utils.get_status()
+                await bot.change_presence(activity=discord.Game(name=f"{data.get('players', 0)} игроков на {data.get('map', 'Лобби')}"))
+                await asyncio.sleep(10)
+        except Exception as e:
+            print(e)
+            await asyncio.sleep(10)
+
 async def main(args):
     print(f"Pid is {os.getpid()}")
     global token, db_user, db_password, db_database, db_host, db_port, db, jobs, species, sexes, lifepaths
@@ -68,6 +79,8 @@ async def main(args):
     print("Connected to db!")
     
     await localization.load()
+
+    asyncio.create_task(timed_task())
     
     try:
         await bot.start(token)
@@ -185,7 +198,7 @@ async def characters(ctx, *, text: str = commands.parameter(description="Сик�
 async def error(ctx, error: Exception):
     print("Error: " + str(error))
     try:
-        await ctx.send(command_run_error)
+        await ctx.message.reply(command_run_error)
     except Exception:
         await ctx.response.send_message(command_run_error)
 
@@ -207,7 +220,6 @@ async def fetch(query: str, *args):
             database=db_database, host=db_host, port=db_port
         )
         return await db.fetch(query, *args)
-
 
 if __name__ == "__main__":
     asyncio.run(main(sys.argv[1:]))
