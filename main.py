@@ -1,24 +1,24 @@
 #!/usr/bin/env python3
 
-# https://github.com/BohdanNovikov0207/Orehum-Project/blob/master/Resources/Locale/ru-RU/_Orehum/contractors/lifepath.ftl
-
 import sys
 import json
 import datetime
-import socket
 
 import discord
+from discord import app_commands
 import asyncio
 import asyncpg
 import aiohttp
 from discord.ext import commands
+
+import localization
 
 intents = discord.Intents.default()
 intents.message_content = True
 intents.guilds = True
 intents.messages = True
 
-bot = commands.Bot(command_prefix="o7", intents=intents)
+bot = commands.Bot(command_prefix="o!", intents=intents)
 
 token = None
 
@@ -29,14 +29,10 @@ db_host: str = "localhost"
 db_port: int = 5432
 db = None
 
-jobs = None # ключ джобки к переведенной джобке
-species = None # ключ расы к переведенной расе
-sexes = None
-
 command_run_error = "Произошла ошибка при выполнении команды."
 
 async def main(args):
-    global token, db_user, db_password, db_database, db_host, db_port, db, jobs, species, sexes
+    global token, db_user, db_password, db_database, db_host, db_port, db, jobs, species, sexes, lifepaths
 
     try:
         with open("bot.json", "r", encoding="utf-8") as file:
@@ -69,22 +65,8 @@ async def main(args):
     )
 
     print("Connected to db!")
-
-    jobs = await load_ftl("https://raw.githubusercontent.com/BohdanNovikov0207/Orehum-Project/refs/heads/master/Resources/Locale/ru-RU/job/job-names.ftl")
-    jobs["Overall"] = "Общее"
-    jobs["Admin"] = "Админ"
-    print("Jobs localization loaded")
-    species = await load_ftl("https://raw.githubusercontent.com/BohdanNovikov0207/Orehum-Project/refs/heads/master/Resources/Locale/ru-RU/species/species.ftl")
-    species["species-name-ipc"] = "КПБ"
-    species["species-name-thaven"] = "Тавен"
-    species["species-name-tajaran"] = "Таяр"
-    species["species-name-felinid"] = "Фелинид"
-    print("Species localization loaded")
-    sexes = {}
-    sexes["male"] = "Мужской"
-    sexes["female"] = "Женский"
-    sexes["unsexed"] = "Бесполый"
-    print("Sexes localization loaded")
+    
+    await localization.load()
     
     try:
         await bot.start(token)
@@ -95,18 +77,12 @@ async def main(args):
         await bot.close()
         await db.close()
 
-
-
-@bot.event
-async def on_ready():
-    print(f"We have logged in as {bot.user}")
-
 @bot.command(name="ping")
 async def ping(ctx):
     await ctx.send("Pong!")
 
 @bot.command(name="find")
-async def find(ctx, *, text: str):
+async def find(ctx, *, text: str = commands.parameter(description="Сикей игрока")):
 	"""
 	Найти игрока по сикею
 	"""
@@ -128,7 +104,7 @@ async def find(ctx, *, text: str):
 		await error(ctx, e)
         
 @bot.command(name="playtime")
-async def playtime(ctx, *, text: str):
+async def playtime(ctx, *, text: str = commands.parameter(description="Сикей игрока")):
     """
     Посмотреть наигранное время игрока
     """
@@ -146,7 +122,7 @@ async def playtime(ctx, *, text: str):
         )
         msg = ""
         for row in rows:
-            msg += f"**{get_job_name(row['tracker'])}** {format_timedelta(row['time_spent'])}\n"
+            msg += f"**{localization.get_job_name(row['tracker'])}** {format_timedelta(row['time_spent'])}\n"
         
         embed.add_field(name=text, value=msg)
 
@@ -176,7 +152,7 @@ async def status(ctx):
         await error(ctx, e)
 
 @bot.command(name="characters")
-async def characters(ctx, *, text: str):
+async def characters(ctx, *, text: str = commands.parameter(description="Сикей игрока")):
     """
     Посмотреть 25 персонажей игрока
     """
@@ -196,7 +172,7 @@ async def characters(ctx, *, text: str):
                 title="",
                 color=discord.Color.from_str(row['skin_color'][:7])
             )
-            msg = f"Раса: {get_specie_name(row['species'])}\nВозраст: {row['age']}\nПол: {get_sex_name(row['sex'])}\nЖизненный путь: {row['lifepath']}\nНациональность: {row['nationality']}\n\n{row['flavor_text']}"
+            msg = f"Раса: {localization.get_specie_name(row['species'])}\nВозраст: {row['age']}\nПол: {localization.get_sex_name(row['sex'])}\nЖизненный путь: {localization.get_lifepath_name(row['lifepath'])}\nНациональность: {row['nationality']}\n\n{row['flavor_text']}"
             if selected == row['slot']:
                 msg = "\n**Выбранный персонаж**\n\n" + msg
             embed.add_field(name=row['char_name'], value=msg)
@@ -222,35 +198,6 @@ def format_timedelta(td: datetime.timedelta) -> str:
 
     return " ".join(parts) if parts else "0 м"
 
-def get_job_name(job_id: str) -> str:
-    return jobs.get(job_id, job_id)
-
-def get_specie_name(spec_id: str) -> str:
-    return species.get("species-name-"+spec_id.lower(), spec_id)
-
-def get_sex_name(sex: str) -> str:
-    return sexes.get(sex.lower(), sex)
-
-async def load_ftl(url: str) -> dict[str, str]:
-    constr = {}
-
-    connector = aiohttp.TCPConnector(family=socket.AF_INET) # IPv4 only
-    async with aiohttp.ClientSession(connector=connector) as session:
-        async with session.get(url) as resp:
-            if resp.status != 200:
-                raise Exception(f"Error while loading jobs ftl: {resp.status}")
-            text = await resp.text()
-
-    for line in text.splitlines():
-        line = line.strip()
-        if not line or line.startswith("#"):
-            continue
-        if "=" in line:
-            key, val = line.split("=", 1)
-            constr[key.strip()] = val.strip().strip('"')
-
-    return constr
-
 async def get_status():
     url = "http://46.149.69.119:10046/status"
     async with aiohttp.ClientSession() as session:
@@ -259,8 +206,17 @@ async def get_status():
             return data
 
 async def error(ctx, error: Exception):
-    print("Error: "+error)
-    await ctx.send(command_run_error)
+    print("Error: " + str(error))
+    try:
+        await ctx.send(command_run_error)
+    except Exception:
+        await ctx.response.send_message(command_run_error)
+
+@bot.event
+async def on_ready():
+    # guild = discord.Object(1399033645880180756)
+    # await bot.tree.sync(guild=guild)
+    print(f"We have logged in as {bot.user}")
 
 if __name__ == "__main__":
     asyncio.run(main(sys.argv[1:]))
