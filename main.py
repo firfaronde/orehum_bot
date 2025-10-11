@@ -2,6 +2,7 @@
 
 import sys
 import json
+import os
 
 import discord
 from discord import app_commands
@@ -31,6 +32,7 @@ db = None
 command_run_error = "Произошла ошибка при выполнении команды."
 
 async def main(args):
+    print(f"Pid is {os.getpid()}")
     global token, db_user, db_password, db_database, db_host, db_port, db, jobs, species, sexes, lifepaths
 
     try:
@@ -176,7 +178,7 @@ async def characters(ctx, *, text: str = commands.parameter(description="Сик�
                 msg = "\n**Выбранный персонаж**\n\n" + msg
             embed.add_field(name=row['char_name'], value=msg)
             embeds.insert(0, embed)
-        await ctx.send(embeds=embeds)
+        await ctx.send(embeds=embeds[:10])
     except Exception as e:
         await error(ctx, e)
 
@@ -198,7 +200,8 @@ async def fetch(query: str, *args):
     try:
         return await db.fetch(query, *args)
     except (asyncpg.exceptions.ConnectionDoesNotExistError, asyncpg.exceptions.InterfaceError):
-        db.close()
+        print("Reconnecting to db...")
+        await db.close()
         db = await asyncpg.connect(
             user=db_user, password=db_password,
             database=db_database, host=db_host, port=db_port
