@@ -1,7 +1,7 @@
 import aiohttp
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
-def format_timedelta(td: datetime.timedelta) -> str:
+def format_timedelta(td: timedelta) -> str:
     total_seconds = int(td.total_seconds())
 
     days = total_seconds // 86400
