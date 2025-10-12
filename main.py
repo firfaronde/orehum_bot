@@ -212,7 +212,7 @@ async def player(ctx, *, ckey: str = commands.parameter(description="Сикей 
         message = await ctx.message.reply("Выполнение...")
         rows = await fetch("SELECT last_seen_user_name FROM player WHERE last_seen_user_name like $1", ckey)
         c = f"**{ckey.replace('@', '')}**\n"
-        if rows[0]['last_seen_user_name']:
+        if rows:
             c += "Есть в БД орехума\n"
         data = await utils.get(f"https://auth.spacestation14.com/api/query/name?name={ckey}")
         if data is not None:
