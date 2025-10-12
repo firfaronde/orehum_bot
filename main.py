@@ -40,7 +40,7 @@ async def timed_task():
                 await bot.change_presence(activity=discord.Game(name=f"{data.get('players', 0)} игроков на {data.get('map', 'Лобби')}"))
                 await asyncio.sleep(10)
         except Exception as e:
-            print(e)
+            # print(e)
             await asyncio.sleep(10)
 
 async def main(args):
