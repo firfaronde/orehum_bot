@@ -37,7 +37,8 @@ async def load(db):
             embed.add_field(name="С причиной", value=row["reason"])
             embed.add_field(name="Дата разбана", value=row["expiration_time"])
 
-            await bot.get_channel(1399082842406912201).send(embed=embed)
+            channel = await bot.fetch_channel(1399082842406912201)
+            await channel.send(embed=embed)
 
         print("Received:", data)
 
