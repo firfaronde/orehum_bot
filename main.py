@@ -3,6 +3,7 @@
 import sys
 import json
 import os
+from datetime import datetime, timezone
 
 import discord
 from discord import app_commands
@@ -152,16 +153,32 @@ async def status(ctx):
     try:
         message = await ctx.send("Выполнение...")
         data = await utils.get_status()
-        embed = discord.Embed(
-            title="",
-            color=discord.Color.green()
+        embed = discord.Embed(color=discord.Color.green())
+
+        msg = (
+            f"**Игроков**: {data.get('players', '0')}/{data.get('soft_max_players', '0')}\n"
+            f"**Карта**: {data.get('map', 'Неизвестно')}\n"
+            f"**Режим**: {data.get('preset', 'Неизвестно')}\n"
+            f"**Раунд**: {data.get('round_id', '0')}"
         )
 
-        msg = f"**Игроков**: {data.get("players", "0")}/{+data.get("soft_max_players", "0")}\n**Карта**: {data.get("map", "Неизвестно")}\n**Режим**: {data.get("preset", "Неизвестно")}\n**Раунд**: {data.get("round_id", "0")}"
+        round_start = data.get("round_start_time")
+        if round_start:
+            try:
+                start_time = datetime.fromisoformat(round_start.replace("Z", "+00:00"))
+                now = datetime.now(timezone.utc)
+                delta = now - start_time
+
+                hours = delta.seconds // 3600
+                minutes = (delta.seconds % 3600) // 60
+
+                msg += f"\n**Раунд идет**: {hours}ч {minutes}м"
+            except Exception as e:
+                msg += f"\n**Раунд идет**: ошибка парсинга ({e})"
 
         embed.add_field(name=data.get("name", "Неизвестно"), value=msg)
-
         await message.edit(embed=embed, content="")
+
     except Exception as e:
         await error(ctx, e)
 
