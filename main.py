@@ -13,6 +13,7 @@ from discord.ext import commands
 
 import localization
 import utils
+import banlistener as banls
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -85,7 +86,9 @@ async def main(args):
     
     await localization.load()
 
+    asyncio.create_task(banls.load(db))
     asyncio.create_task(timed_task())
+
     print("Start complete")
     try:
         await bot.start(token)
