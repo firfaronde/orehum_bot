@@ -19,7 +19,7 @@ def format_timedelta(td: datetime.timedelta) -> str:
     return " ".join(parts) if parts else "0 м"
 
 async def get_status():
-    url = "http://46.149.69.119:17110/status"
+    url = "http://47.89.131.63:17110/status"
     timeout = aiohttp.ClientTimeout(total=2)
     async with aiohttp.ClientSession(timeout=timeout) as session:
         async with session.get(url) as resp:
