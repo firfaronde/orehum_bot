@@ -10,7 +10,7 @@ async def load(db):
     async def handler(connection, pid, channel, payload):
         data = json.loads(payload)
 
-        rows = await fetch("SELECT * FROM server_ban WHERE server_ban_id = $1", data.get('ban_id'))
+        rows = await db.fetch("SELECT * FROM server_ban WHERE server_ban_id = $1", data.get('ban_id'))
         if rows:
             row = rows[0]
             embed = discord.Embed(
@@ -22,13 +22,13 @@ async def load(db):
             if row["banning_admin"] is None:
                 tmp = "Сервер"
             else:
-                rows2 = await fetch("SELECT * FROM player WHERE user_id = $1", row["banning_admin"])
+                rows2 = await db.fetch("SELECT * FROM player WHERE user_id = $1", row["banning_admin"])
                 if rows2:
                     tmp = rows2[0]["last_seen_user_name"]
                 else:
                     tmp = "Неизвестно"
             embed.add_field(name="Забанил", value=tmp)
-            rows2 = await fetch("SELECT * FROM player WHERE user_id = $1", row["player_user_id"])
+            rows2 = await db.fetch("SELECT * FROM player WHERE user_id = $1", row["player_user_id"])
             if rows2:
                 tmp = rows2[0]["last_seen_user_name"]
             else:
