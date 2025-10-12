@@ -206,7 +206,7 @@ async def characters(ctx, *, text: str = commands.parameter(description="Сик�
     except Exception as e:
         await error(ctx, e)
 
-@bot.command(name="player")
+@bot.command(name="player", hidden=True)
 async def player(ctx, *, ckey: str = commands.parameter(description="Сикей игрока")):
     try:
         message = await ctx.message.reply("Выполнение...")
