@@ -206,6 +206,21 @@ async def characters(ctx, *, text: str = commands.parameter(description="Сик�
     except Exception as e:
         await error(ctx, e)
 
+@bot.command(name="player")
+async def player(ctx, *, ckey: str = commands.parameter(description="Сикей игрока")):
+    try:
+        message = await ctx.message.reply("Выполнение...")
+        rows = await fetch("SELECT last_seen_user_name FROM player WHERE last_seen_user_name like $1")
+        c = ""
+        if rows[0]['last_seen_user_name']:
+            c += "Есть в БД орехума\n"
+        data = await utils.get(f"https://auth.spacestation14.com/api/query/name?name={ckey}")
+        if data is not None:
+            c += f"Дата регистрации: {data.get('createdTime', "Аккаунта не существует")}"
+        await message.edit(c)
+    except Exception as e:
+        await error(ctx, e)
+
 async def error(ctx, error: Exception):
     print("Error: " + str(error))
     try:

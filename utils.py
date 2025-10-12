@@ -1,3 +1,4 @@
+import struct
 import aiohttp
 from datetime import datetime, timezone, timedelta
 
@@ -20,6 +21,13 @@ def format_timedelta(td: timedelta) -> str:
 
 async def get_status():
     url = "http://47.89.131.63:17110/status"
+    timeout = aiohttp.ClientTimeout(total=2)
+    async with aiohttp.ClientSession(timeout=timeout) as session:
+        async with session.get(url) as resp:
+            data = await resp.json()
+            return data
+
+async def get(url: str):
     timeout = aiohttp.ClientTimeout(total=2)
     async with aiohttp.ClientSession(timeout=timeout) as session:
         async with session.get(url) as resp:
