@@ -37,7 +37,11 @@ async def timed_task():
         try:
             if bot is not None:
                 data = await utils.get_status()
-                await bot.change_presence(activity=discord.Game(name=f"{data.get('players', 0)} игроков на {data.get('map', 'Лобби')}"))
+                msg = f"👱{data.get('players', 0)}🗺️{data.get('map', 'Лобби')}🕛"
+                round_duration = utils.get_duration(data.get("round_start_time"))
+                if round_duration:
+                    msg += round_duration
+                await bot.change_presence(activity=discord.Game(name=msg))
                 await asyncio.sleep(10)
         except Exception as e:
             # print(e)
@@ -162,19 +166,9 @@ async def status(ctx):
             f"**Раунд**: {data.get('round_id', '0')}"
         )
 
-        round_start = data.get("round_start_time")
-        if round_start:
-            try:
-                start_time = datetime.fromisoformat(round_start.replace("Z", "+00:00"))
-                now = datetime.now(timezone.utc)
-                delta = now - start_time
-
-                hours = delta.seconds // 3600
-                minutes = (delta.seconds % 3600) // 60
-
-                msg += f"\n**Раунд идет**: {hours}ч {minutes}м"
-            except Exception as e:
-                msg += f"\n**Раунд идет**: ошибка парсинга ({e})"
+        round_duration = utils.get_duration(data.get("round_start_time"))
+        if round_duration:
+            msg += f"\n**Раунд идет**: {round_duration}"
 
         embed.add_field(name=data.get("name", "Неизвестно"), value=msg)
         await message.edit(embed=embed, content="")

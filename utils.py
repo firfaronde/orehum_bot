@@ -1,5 +1,5 @@
 import aiohttp
-import datetime
+from datetime import datetime, timezone
 
 def format_timedelta(td: datetime.timedelta) -> str:
     total_seconds = int(td.total_seconds())
@@ -25,3 +25,19 @@ async def get_status():
         async with session.get(url) as resp:
             data = await resp.json()
             return data
+
+def get_duration(round_start_time: str) -> str | None:
+    if not round_start_time:
+        return None
+
+    try:
+        start_time = datetime.fromisoformat(round_start_time.replace("Z", "+00:00"))
+        now = datetime.now(timezone.utc)
+        delta = now - start_time
+
+        hours = delta.seconds // 3600
+        minutes = (delta.seconds % 3600) // 60
+
+        return f"{hours}ч {minutes}м"
+    except Exception:
+        return None
