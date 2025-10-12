@@ -4,9 +4,9 @@ import asyncio
 import asyncpg
 import discord
 
-from main import fetch, bot, db
+from main import fetch, bot
 
-async def load():
+async def load(db):
     async def handler(connection, pid, channel, payload):
         data = json.loads(payload)
 

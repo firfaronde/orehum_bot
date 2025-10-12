@@ -86,7 +86,7 @@ async def main(args):
     
     await localization.load()
 
-    asyncio.create_task(banls.load())
+    asyncio.create_task(banls.load(db))
     asyncio.create_task(timed_task())
 
     print("Start complete")
