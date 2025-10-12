@@ -217,7 +217,7 @@ async def player(ctx, *, ckey: str = commands.parameter(description="Сикей 
         data = await utils.get(f"https://auth.spacestation14.com/api/query/name?name={ckey}")
         if data is not None:
             c += f"Дата регистрации: {data.get('createdTime', "Аккаунта не существует")}"
-        await message.edit(c)
+        await message.edit(content=c)
     except Exception as e:
         await error(ctx, e)
 
