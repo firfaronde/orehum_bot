@@ -37,10 +37,10 @@ async def timed_task():
         try:
             if bot is not None:
                 data = await utils.get_status()
-                msg = f"👱{data.get('players', 0)}🗺️{data.get('map', 'Лобби')}🕛"
+                msg = f"👱{data.get('players', 0)}🗺️{data.get('map', 'Лобби')}"
                 round_duration = utils.get_duration(data.get("round_start_time"))
                 if round_duration:
-                    msg += round_duration
+                    msg += f"🕛{round_duration}"
                 await bot.change_presence(activity=discord.Game(name=msg))
                 await asyncio.sleep(10)
         except Exception as e:
