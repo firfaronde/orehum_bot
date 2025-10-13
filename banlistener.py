@@ -5,7 +5,7 @@ import asyncio
 import asyncpg
 import discord
 
-async def load(db, bot):
+async def load(db, bot, channel_id):
     async def handler(connection, pid, channel, payload):
         data = json.loads(payload)
 
@@ -37,10 +37,10 @@ async def load(db, bot):
             dt: datetime = row["expiration_time"]
             embed.add_field(name="Дата разбана", value=dt.strftime("%d %B %Y %H:%M"))
 
-            channel = bot.get_channel(1399082842406912201)
+            channel = bot.get_channel(channel_id)
             if channel is None:
                 try:
-                    channel = await bot.fetch_channel(1399082842406912201)
+                    channel = await bot.fetch_channel(channel_id)
                 except Exception as e:
                     print(e)
                     return

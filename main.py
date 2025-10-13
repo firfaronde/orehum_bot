@@ -25,6 +25,8 @@ bot = commands.Bot(command_prefix="o!", intents=intents)
 
 token = None
 
+bans_channel_id = None
+
 db_user: str = "ss14"
 db_password: str = ""
 db_database: str = "ss14"
@@ -39,11 +41,11 @@ async def timed_task():
         try:
             if bot is not None:
                 data = await utils.get_status()
-                msg = f"👱{data.get('players', 0)}🗺️{data.get('map', 'Лобби')}"
-                round_duration = utils.get_duration(data.get("round_start_time"))
-                if round_duration:
-                    msg += f"🕛{round_duration}"
-                await bot.change_presence(activity=discord.Game(name=msg))
+                # msg = f"👱{data.get('players', 0)}🗺️{data.get('map', 'Лобби')}"
+                # round_duration = utils.get_duration(data.get("round_start_time"))
+                # if round_duration:
+                #     msg += f"🕛{round_duration}"
+                await bot.change_presence(activity=discord.Game(name=f"{data.get('player', 0)} игроков на {data.get('map', 'Лобби')}"))
                 await asyncio.sleep(10)
         except Exception as e:
             # print(e)
@@ -71,6 +73,8 @@ async def main(args):
     db_host = data.get("db_host", db_host)
     db_port = data.get("db_port", db_port)
     db_database = data.get("db_database", db_database)
+
+    bans_channel_id = data.get("bans_channel_id")
 
     if not token:
         print("No bot token found")
@@ -238,7 +242,8 @@ async def on_ready():
     # guild = discord.Object(1399033645880180756)
     # await bot.tree.sync(guild=guild)
     print(f"We have logged in as {bot.user}")
-    asyncio.create_task(banls.load(db, bot))
+    if bans_channel_id:
+        asyncio.create_task(banls.load(db, bot, bans_channel_id))
 
 async def fetch(query: str, *args):
     global db
