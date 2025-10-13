@@ -86,7 +86,7 @@ async def main(args):
     
     await localization.load()
 
-    asyncio.create_task(banls.load(db))
+
     asyncio.create_task(timed_task())
 
     print("Start complete")
@@ -236,6 +236,7 @@ async def on_ready():
     # guild = discord.Object(1399033645880180756)
     # await bot.tree.sync(guild=guild)
     print(f"We have logged in as {bot.user}")
+    asyncio.create_task(banls.load(db, bot))
 
 async def fetch(query: str, *args):
     global db

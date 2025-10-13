@@ -4,9 +4,7 @@ import asyncio
 import asyncpg
 import discord
 
-from main import fetch, bot
-
-async def load(db):
+async def load(db, bot):
     async def handler(connection, pid, channel, payload):
         data = json.loads(payload)
 
@@ -38,8 +36,14 @@ async def load(db):
             embed.add_field(name="Дата разбана", value=row["expiration_time"])
 
             channel = bot.get_channel(1399082842406912201)
+            if channel is None:
+                try:
+                    channel = await bot.fetch_channel(1399082842406912201)
+                except Exception as e:
+                    print(e)
+                    return
             await channel.send(embed=embed)
 
-        print("Received:", data)
+        # print("Received:", data)
 
     await db.add_listener('ban_notification', handler)
