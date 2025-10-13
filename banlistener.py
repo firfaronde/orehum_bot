@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 
 import asyncio
 import asyncpg
@@ -33,7 +34,8 @@ async def load(db, bot):
                 tmp = "Неизвестно"
             embed.add_field(name="Игрока", value=tmp)
             embed.add_field(name="С причиной", value=row["reason"])
-            embed.add_field(name="Дата разбана", value=row["expiration_time"])
+            dt = datetime.fromisoformat(row["expiration_time"])
+            embed.add_field(name="Дата разбана", value=dt.strftime("%d %B %Y года"))
 
             channel = bot.get_channel(1399082842406912201)
             if channel is None:
