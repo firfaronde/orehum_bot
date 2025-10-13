@@ -34,8 +34,8 @@ async def load(db, bot):
                 tmp = "Неизвестно"
             embed.add_field(name="Игрока", value=tmp)
             embed.add_field(name="С причиной", value=row["reason"])
-            dt = datetime.fromisoformat(row["expiration_time"])
-            embed.add_field(name="Дата разбана", value=dt.strftime("%d %B %Y года"))
+            dt: datetime = row["expiration_time"]
+            embed.add_field(name="Дата разбана", value=dt.strftime("%d %B %Y года, %H:%M"))
 
             channel = bot.get_channel(1399082842406912201)
             if channel is None:
