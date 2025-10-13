@@ -4,7 +4,7 @@ import sys
 import json
 import os
 from datetime import datetime, timezone
-import locale
+# import locale
 
 import discord
 from discord import app_commands
@@ -51,7 +51,7 @@ async def timed_task():
 
 async def main(args):
     print(f"Pid is {os.getpid()}")
-    locale.setlocale(locale.LC_TIME, "ru_RU.UTF-8")
+    # locale.setlocale(locale.LC_TIME, "ru_RU.UTF-8")
     global token, db_user, db_password, db_database, db_host, db_port, db, jobs, species, sexes, lifepaths
 
     try:

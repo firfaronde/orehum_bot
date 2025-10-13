@@ -35,7 +35,7 @@ async def load(db, bot):
             embed.add_field(name="Игрока", value=tmp)
             embed.add_field(name="С причиной", value=row["reason"])
             dt: datetime = row["expiration_time"]
-            embed.add_field(name="Дата разбана", value=dt.strftime("%d %B %Y года, %H:%M"))
+            embed.add_field(name="Дата разбана", value=dt.strftime("%d %B %Y %H:%M"))
 
             channel = bot.get_channel(1399082842406912201)
             if channel is None:
