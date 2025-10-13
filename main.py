@@ -3,7 +3,7 @@
 import sys
 import json
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 # import locale
 
 import discord
@@ -34,6 +34,8 @@ db_host: str = "localhost"
 db_port: int = 5432
 db = None
 
+role_trackers = None
+
 command_run_error = "Произошла ошибка при выполнении команды."
 
 async def timed_task():
@@ -54,7 +56,7 @@ async def timed_task():
 async def main(args):
     print(f"Pid is {os.getpid()}")
     # locale.setlocale(locale.LC_TIME, "ru_RU.UTF-8")
-    global token, db_user, db_password, db_database, db_host, db_port, db, jobs, species, sexes, lifepaths
+    global token, db_user, db_password, db_database, db_host, db_port, db, jobs, species, sexes, lifepaths, role_trackers
 
     try:
         with open("bot.json", "r", encoding="utf-8") as file:
@@ -92,6 +94,8 @@ async def main(args):
     
     await localization.load()
 
+    role_trackers = await fetch_trackers()
+    print(role_trackers)
 
     asyncio.create_task(timed_task())
 
@@ -215,7 +219,13 @@ async def characters(ctx, *, text: str = commands.parameter(description="Сик�
     except Exception as e:
         await error(ctx, e)
 
+async def is_admin(ctx) -> bool:
+    member = ctx.author
+    return any(role.id == 1399083269416419398 for role in member.roles)
+
+
 @bot.command(name="player", hidden=True)
+@commands.check(is_admin)
 async def player(ctx, *, ckey: str = commands.parameter(description="Сикей игрока")):
     try:
         message = await ctx.message.reply("Выполнение...")
@@ -257,6 +267,16 @@ async def fetch(query: str, *args):
             database=db_database, host=db_host, port=db_port
         )
         return await db.fetch(query, *args)
+
+async def fetch_trackers() -> list[str]:
+    try:
+        trackers = []
+        rows = await fetch("SELECT DISTINCT tracker FROM play_time")
+        for row in rows:
+            trackers.append(row['tracker'])
+        return trackers
+    except Exception:
+        return None
 
 if __name__ == "__main__":
     asyncio.run(main(sys.argv[1:]))

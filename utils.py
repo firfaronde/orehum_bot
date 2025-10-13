@@ -1,6 +1,7 @@
 import struct
 import aiohttp
 from datetime import datetime, timezone, timedelta
+import re
 
 def format_timedelta(td: timedelta) -> str:
     total_seconds = int(td.total_seconds())
@@ -49,3 +50,15 @@ def get_duration(round_start_time: str) -> str | None:
         return f"{hours}ч {minutes}м"
     except Exception:
         return None
+
+def parse_time(time_str: str) -> timedelta:
+    pattern = r"(?:(\d+)d)?(?:(\d+)h)?(?:(\d+)m)?"
+    match = re.fullmatch(pattern, time_str.strip())
+    if not match:
+        raise ValueError("Unkown format")
+
+    days = int(match.group(1)) if match.group(1) else 0
+    hours = int(match.group(2)) if match.group(2) else 0
+    minutes = int(match.group(3)) if match.group(3) else 0
+
+    return timedelta(days=days, hours=hours, minutes=minutes)
