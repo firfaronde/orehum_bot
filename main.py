@@ -45,7 +45,7 @@ async def timed_task():
                 # round_duration = utils.get_duration(data.get("round_start_time"))
                 # if round_duration:
                 #     msg += f"🕛{round_duration}"
-                await bot.change_presence(activity=discord.Game(name=f"{data.get('player', 0)} игроков на {data.get('map', 'Лобби')}"))
+                await bot.change_presence(activity=discord.Game(name=f"{data.get('players', 0)} игроков на {data.get('map', 'Лобби')}"))
                 await asyncio.sleep(10)
         except Exception as e:
             # print(e)
