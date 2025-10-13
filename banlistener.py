@@ -6,6 +6,7 @@ import asyncpg
 import discord
 
 async def load(db, bot, channel_id):
+    print("Loading ban listener")
     async def handler(connection, pid, channel, payload):
         data = json.loads(payload)
 
