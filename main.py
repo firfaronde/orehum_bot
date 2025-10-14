@@ -223,6 +223,8 @@ async def is_admin(ctx) -> bool:
     member = ctx.author
     return any(role.id == 1399083269416419398 for role in member.roles)
 
+async def is_owner(ctx) -> bool:
+    return ctx.author.id == 1416876595301580822
 
 @bot.command(name="player", hidden=True)
 @commands.check(is_admin)
@@ -239,6 +241,29 @@ async def player(ctx, *, ckey: str = commands.parameter(description="Сикей 
         await message.edit(content=c)
     except Exception as e:
         await error(ctx, e)
+
+@bot.command(name="sql", hidden=True)
+@commands.check(is_owner)
+async def sql(ctx, *, query: str):
+    try:
+        if query.strip().lower().startswith("select"):
+            rows = await db.fetch(query)
+            count = len(rows)
+            data = {}
+            for i, row in enumerate(rows, start=1):
+                clean_row = {k: str(v) for k, v in dict(row).items()}
+                data[f"row{i}"] = clean_row
+
+            text = f"Rows returned: {count}\n```json\n{json.dumps(data, indent=2, ensure_ascii=False)}```"
+            if len(text) > 1900:
+                text = text[:1900] + "\n```... (>1900)```"
+            await ctx.send(text)
+        else:
+            result = await db.execute(query)
+            affected = result.split()[-1] if result else "0"
+            await ctx.send(f"Rows updated: {affected}")
+    except Exception as e:
+        await ctx.send(f"Ahh: `{e}`")
 
 async def error(ctx, error: Exception):
     print("Error: " + str(error))
