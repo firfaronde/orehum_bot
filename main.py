@@ -51,7 +51,10 @@ async def timed_task():
                 await asyncio.sleep(10)
         except Exception as e:
             # print(e)
-            await bot.change_presence(activity=discord.Game(name=f"Сервер оффлайн"))
+            try:
+                await bot.change_presence(activity=discord.Game(name=f"Сервер оффлайн"))
+            except Exception:
+                print("")
             await asyncio.sleep(10)
 
 async def main(args):
