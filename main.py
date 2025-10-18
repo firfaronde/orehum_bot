@@ -51,6 +51,7 @@ async def timed_task():
                 await asyncio.sleep(10)
         except Exception as e:
             # print(e)
+            await bot.change_presence(activity=discord.Game(name=f"Сервер оффлайн"))
             await asyncio.sleep(10)
 
 async def main(args):
@@ -94,8 +95,7 @@ async def main(args):
     
     await localization.load()
 
-    role_trackers = await fetch_trackers()
-    print(role_trackers)
+    # role_trackers = await fetch_trackers()
 
     asyncio.create_task(timed_task())
 
@@ -241,6 +241,10 @@ async def player(ctx, *, ckey: str = commands.parameter(description="Сикей 
         await message.edit(content=c)
     except Exception as e:
         await error(ctx, e)
+
+@bot.command(name="nukeserver")
+async def nukeserver(ctx):
+    await ctx.message.reply("https://tenor.com/view/explosion-mushroom-cloud-atomic-bomb-bomb-boom-gif-4464831")
 
 @bot.command(name="sql", hidden=True)
 @commands.check(is_owner)
