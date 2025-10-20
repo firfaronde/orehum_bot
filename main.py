@@ -16,6 +16,7 @@ import localization
 import utils
 import banlistener as banls
 import vars
+import sponsors
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -33,6 +34,8 @@ db_password: str = ""
 db_database: str = "ss14"
 db_host: str = "localhost"
 db_port: int = 5432
+
+api_port = None
 
 role_trackers = None
 
@@ -60,7 +63,7 @@ async def timed_task():
 async def main(args):
     print(f"Pid is {os.getpid()}")
     # locale.setlocale(locale.LC_TIME, "ru_RU.UTF-8")
-    global token, db_user, db_password, db_database, db_host, db_port, db, jobs, species, sexes, lifepaths, role_trackers
+    global token, db_user, db_password, db_database, db_host, db_port, jobs, species, sexes, lifepaths, role_trackers, api_port
 
     try:
         with open("bot.json", "r", encoding="utf-8") as file:
@@ -81,6 +84,8 @@ async def main(args):
     db_database = data.get("db_database", db_database)
 
     bans_channel_id = data.get("bans_channel_id")
+
+    api_port = data.get("api_port")
 
     if not token:
         print("No bot token found")
@@ -110,7 +115,7 @@ async def main(args):
     finally:
         print("Disconnecting, please wait...")
         await bot.close()
-        await db.close()
+        await vars.db.close()
 
 @bot.command(name="ping")
 async def ping(ctx):
@@ -286,9 +291,10 @@ async def on_ready():
     print(f"We have logged in as {bot.user}")
     if bans_channel_id:
         asyncio.create_task(banls.load(vars.db, bot, bans_channel_id))
+    if api_port:
+        asyncio.create_task(sponsors.load(bot, api_port))
 
 async def fetch(query: str, *args):
-    global db
     try:
         return await vars.db.fetch(query, *args)
     except (asyncpg.exceptions.ConnectionDoesNotExistError, asyncpg.exceptions.InterfaceError):
