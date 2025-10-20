@@ -15,6 +15,7 @@ from discord.ext import commands
 import localization
 import utils
 import banlistener as banls
+import vars
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -32,7 +33,6 @@ db_password: str = ""
 db_database: str = "ss14"
 db_host: str = "localhost"
 db_port: int = 5432
-db = None
 
 role_trackers = None
 
@@ -89,7 +89,7 @@ async def main(args):
         print("No database password found")
         sys.exit(1)
 
-    db = await asyncpg.connect(
+    vars.db = await asyncpg.connect(
         user=db_user, password=db_password,
         database=db_database, host=db_host, port=db_port
     )
@@ -254,7 +254,7 @@ async def nukeserver(ctx):
 async def sql(ctx, *, query: str):
     try:
         if query.strip().lower().startswith("select"):
-            rows = await db.fetch(query)
+            rows = await vars.db.fetch(query)
             count = len(rows)
             data = {}
             for i, row in enumerate(rows, start=1):
@@ -266,7 +266,7 @@ async def sql(ctx, *, query: str):
                 text = text[:1900] + "\n```... (>1900)```"
             await ctx.send(text)
         else:
-            result = await db.execute(query)
+            result = await vars.db.execute(query)
             affected = result.split()[-1] if result else "0"
             await ctx.send(f"Rows updated: {affected}")
     except Exception as e:
@@ -285,20 +285,20 @@ async def on_ready():
     # await bot.tree.sync(guild=guild)
     print(f"We have logged in as {bot.user}")
     if bans_channel_id:
-        asyncio.create_task(banls.load(db, bot, bans_channel_id))
+        asyncio.create_task(banls.load(vars.db, bot, bans_channel_id))
 
 async def fetch(query: str, *args):
     global db
     try:
-        return await db.fetch(query, *args)
+        return await vars.db.fetch(query, *args)
     except (asyncpg.exceptions.ConnectionDoesNotExistError, asyncpg.exceptions.InterfaceError):
         print("Reconnecting to db...")
-        await db.close()
-        db = await asyncpg.connect(
+        await vars.db.close()
+        vars.db = await asyncpg.connect(
             user=db_user, password=db_password,
             database=db_database, host=db_host, port=db_port
         )
-        return await db.fetch(query, *args)
+        return await vars.db.fetch(query, *args)
 
 async def fetch_trackers() -> list[str]:
     try:
