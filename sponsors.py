@@ -1,15 +1,51 @@
 from quart import Quart, jsonify, abort
 from hypercorn.asyncio import serve
 from hypercorn.config import Config
+import asyncio
+import asyncpg
 
 import uuid
-
-import vars
+import sys
+import json
+import sys
 
 api = Quart(__name__)
-from main import fetch
 
-async def load(bot, api_port: int = 80):
+api_port = 80
+
+db_user: str = "ss14"
+db_password: str = ""
+db_database: str = "ss14"
+db_host: str = "localhost"
+db_port: int = 5432
+
+db = None
+
+async def main(args):
+    global api_port, db_user, db_password, db_port, db_host, db_database
+    try:
+        with open("bot.json", "r", encoding="utf-8") as file:
+            data = json.load(file)
+    except FileNotFoundError:
+        print("[Sponsors]No config file found!")
+        sys.exit(1)
+    except json.JSONDecodeError:
+        print("[SponsorsInvalid config file")
+        sys.exit(1)
+    
+    api_port = data.get("api_port", api_port)
+
+    db_user = data.get("db_user", db_user)
+    db_password = data.get("db_password", db_password)
+    db_host = data.get("db_host", db_host)
+    db_port = data.get("db_port", db_port)
+    db_database = data.get("db_database", db_database)
+
+    db = await asyncpg.connect(
+        user=db_user, password=db_password,
+        database=db_database, host=db_host, port=db_port
+    )
+    
     config = Config()
     config.bind = [f"0.0.0.0:{api_port}"]
     await serve(api, config)
@@ -35,3 +71,18 @@ async def get_sponsor(user_id: str):
 
 async def get_sponsor_tier(user_id: str):
     return await fetch("SELECT st.* FROM sponsors s JOIN sponsors_tiers st ON st.sponsor_id = s.id WHERE s.player_id = $1 LIMIT 1", user_id)
+
+async def fetch(query: str, *args):
+    global db
+    try:
+        return await db.fetch(query, *args)
+    except (asyncpg.exceptions.ConnectionDoesNotExistError, asyncpg.exceptions.InterfaceError):
+        print("[Sponsors]Reconnecting to db...")
+        await db.close()
+        db = await asyncpg.connect(
+            user=db_user, password=db_password,
+            database=db_database, host=db_host, port=db_port
+        )
+        return await db.fetch(query, *args)
+
+asyncio.run(main(sys.argv[1:]))

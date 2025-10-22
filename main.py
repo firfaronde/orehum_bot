@@ -15,8 +15,6 @@ from discord.ext import commands
 import localization
 import utils
 import banlistener as banls
-import vars
-import sponsors
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -35,6 +33,8 @@ db_database: str = "ss14"
 db_host: str = "localhost"
 db_port: int = 5432
 
+db = None
+
 api_port = None
 
 role_trackers = None
@@ -43,10 +43,10 @@ command_run_error = "Произошла ошибка при выполнении
 
 async def timed_task():
     while True:
-        try:
-            await fetch("select 1+1")
-        except Exception: 
-            print()
+        #try:
+            #await fetch("select 1+1")
+        #except Exception: 
+            #print()
         try:
             if bot is not None:
                 data = await utils.get_status()
@@ -67,7 +67,7 @@ async def timed_task():
 async def main(args):
     print(f"Pid is {os.getpid()}")
     # locale.setlocale(locale.LC_TIME, "ru_RU.UTF-8")
-    global token, db_user, db_password, db_database, db_host, db_port, jobs, species, sexes, lifepaths, role_trackers, api_port
+    global token, db_user, db_password, db_database, db_host, db_port, db, jobs, species, sexes, lifepaths, role_trackers, api_port
 
     try:
         with open("bot.json", "r", encoding="utf-8") as file:
@@ -98,7 +98,7 @@ async def main(args):
         print("No database password found")
         sys.exit(1)
 
-    vars.db = await asyncpg.connect(
+    db = await asyncpg.connect(
         user=db_user, password=db_password,
         database=db_database, host=db_host, port=db_port
     )
@@ -119,7 +119,7 @@ async def main(args):
     finally:
         print("Disconnecting, please wait...")
         await bot.close()
-        await vars.db.close()
+        await db.close()
 
 @bot.command(name="ping")
 async def ping(ctx):
@@ -263,7 +263,7 @@ async def nukeserver(ctx):
 async def sql(ctx, *, query: str):
     try:
         if query.strip().lower().startswith("select"):
-            rows = await vars.db.fetch(query)
+            rows = await db.fetch(query)
             count = len(rows)
             data = {}
             for i, row in enumerate(rows, start=1):
@@ -275,7 +275,7 @@ async def sql(ctx, *, query: str):
                 text = text[:1900] + "\n```... (>1900)```"
             await ctx.send(text)
         else:
-            result = await vars.db.execute(query)
+            result = await db.execute(query)
             affected = result.split()[-1] if result else "0"
             await ctx.send(f"Rows updated: {affected}")
     except Exception as e:
@@ -294,19 +294,19 @@ async def make_sponsor(ctx, *, ckey: str = commands.parameter(description="Си�
 @commands.check(is_owner)
 async def add_sponsor_tier(ctx, sponsor_id: int, oocColor: str, ghostTheme: str):
     try:
-        sponsor_exists = await vars.db.fetchval(
+        sponsor_exists = await db.fetchval(
             "SELECT EXISTS(SELECT 1 FROM sponsors WHERE id = $1)", sponsor_id
         )
         if not sponsor_exists:
             return await ctx.send("Спонсора не существует.")
 
-        tier_exists = await vars.db.fetchval(
+        tier_exists = await db.fetchval(
             "SELECT EXISTS(SELECT 1 FROM sponsors_tiers WHERE sponsor_id = $1)", sponsor_id
         )
         if tier_exists:
             return await ctx.send("У спонсора уже есть тир.")
 
-        await vars.db.execute(
+        await db.execute(
             """
             INSERT INTO sponsors_tiers (sponsor_id, tier, oocColor, ghostTheme)
             VALUES ($1, 1, $2, $3)
@@ -332,21 +332,20 @@ async def on_ready():
     # await bot.tree.sync(guild=guild)
     print(f"We have logged in as {bot.user}")
     if bans_channel_id:
-        asyncio.create_task(banls.load(vars.db, bot, bans_channel_id))
-    if api_port:
-        asyncio.create_task(sponsors.load(bot, api_port))
+        asyncio.create_task(banls.load(db, bot, bans_channel_id))
 
 async def fetch(query: str, *args):
+    global db
     try:
-        return await vars.db.fetch(query, *args)
+        return await db.fetch(query, *args)
     except (asyncpg.exceptions.ConnectionDoesNotExistError, asyncpg.exceptions.InterfaceError):
         print("Reconnecting to db...")
-        await vars.db.close()
-        vars.db = await asyncpg.connect(
+        await db.close()
+        db = await asyncpg.connect(
             user=db_user, password=db_password,
             database=db_database, host=db_host, port=db_port
         )
-        return await vars.db.fetch(query, *args)
+        return await db.fetch(query, *args)
 
 async def fetch_trackers() -> list[str]:
     try:
