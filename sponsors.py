@@ -22,7 +22,7 @@ db_port: int = 5432
 db = None
 
 async def main(args):
-    global api_port, db_user, db_password, db_port, db_host, db_database
+    global api_port, db_user, db_password, db_port, db_host, db_database, db
     try:
         with open("bot.json", "r", encoding="utf-8") as file:
             data = json.load(file)
@@ -78,7 +78,8 @@ async def fetch(query: str, *args):
         return await db.fetch(query, *args)
     except (asyncpg.exceptions.ConnectionDoesNotExistError, asyncpg.exceptions.InterfaceError):
         print("[Sponsors]Reconnecting to db...")
-        await db.close()
+        if db is None:
+            await db.close()
         db = await asyncpg.connect(
             user=db_user, password=db_password,
             database=db_database, host=db_host, port=db_port
