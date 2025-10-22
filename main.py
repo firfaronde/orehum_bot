@@ -283,7 +283,7 @@ async def sql(ctx, *, query: str):
 
 @bot.command(name="makesponsor")
 @commands.check(is_owner)
-async def make_sponsor(ctx, ckey: str = commands.parameter(description="Сикей игрока"), discord_id: str):
+async def make_sponsor(ctx, ckey: str = commands.parameter(description="Сикей игрока"), discord_id: str = commands.parameter(description="ID аккаунта в дискорде")):
     try:
         rows = await fetch("INSERT INTO sponsors (player_id, discord_id) SELECT p.user_id, $2 FROM player p WHERE p.last_seen_user_name = $1 RETURNING id", ckey, discord_id)
         await ctx.send(f"Спонсор создан с айди {rows[0]["id"]}")
