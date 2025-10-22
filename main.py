@@ -290,6 +290,35 @@ async def make_sponsor(ctx, *, ckey: str = commands.parameter(description="Си�
     except Exception as e:
         await error(ctx, e)
 
+@bot.command(name="addtier")
+@commands.check(is_owner)
+async def add_sponsor_tier(ctx, sponsor_id: int, oocColor: str, ghostTheme: str):
+    try:
+        sponsor_exists = await vars.db.fetchval(
+            "SELECT EXISTS(SELECT 1 FROM sponsors WHERE id = $1)", sponsor_id
+        )
+        if not sponsor_exists:
+            return await ctx.send("Спонсора не существует.")
+
+        tier_exists = await vars.db.fetchval(
+            "SELECT EXISTS(SELECT 1 FROM sponsors_tiers WHERE sponsor_id = $1)", sponsor_id
+        )
+        if tier_exists:
+            return await ctx.send("У спонсора уже есть тир.")
+
+        await vars.db.execute(
+            """
+            INSERT INTO sponsors_tiers (sponsor_id, tier, oocColor, ghostTheme)
+            VALUES ($1, 1, $2, $3)
+            """,
+            sponsor_id, oocColor, ghostTheme
+        )
+
+        await ctx.send("Тир добавлен.")
+
+    except Exception as e:
+        await error(ctx, e)
+
 async def error(ctx, error: Exception):
     print("Error: " + str(error))
     try:
