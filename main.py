@@ -44,6 +44,10 @@ command_run_error = "Произошла ошибка при выполнении
 async def timed_task():
     while True:
         try:
+            await fetch("select 1+1")
+        except Exception: 
+            print()
+        try:
             if bot is not None:
                 data = await utils.get_status()
                 # msg = f"👱{data.get('players', 0)}🗺️{data.get('map', 'Лобби')}"
