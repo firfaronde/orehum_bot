@@ -125,7 +125,8 @@ async def main(args):
 
 @bot.command(name="ping")
 async def ping(ctx):
-    await ctx.send("Pong!")
+    latency_ms = round((bot.latency or 0) * 1000)
+    await ctx.send(f"Пинг: {latency_ms}ms")
 
 @bot.command(name="find")
 async def find(ctx, *, text: str = commands.parameter(description="Сикей игрока")):
