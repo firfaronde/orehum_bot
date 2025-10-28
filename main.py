@@ -11,6 +11,7 @@ from discord import app_commands
 import asyncio
 import asyncpg
 from discord.ext import commands
+from typing import Optional, List
 
 import localization
 import utils
@@ -33,7 +34,7 @@ db_database: str = "ss14"
 db_host: str = "localhost"
 db_port: int = 5432
 
-db = None
+db: Optional[asyncpg.Connection] = None
 
 api_port = None
 
@@ -67,7 +68,7 @@ async def timed_task():
 async def main(args):
     print(f"Pid is {os.getpid()}")
     # locale.setlocale(locale.LC_TIME, "ru_RU.UTF-8")
-    global token, db_user, db_password, db_database, db_host, db_port, db, jobs, species, sexes, lifepaths, role_trackers, api_port
+    global token, db_user, db_password, db_database, db_host, db_port, db, jobs, species, sexes, lifepaths, role_trackers, api_port, bans_channel_id
 
     try:
         with open("bot.json", "r", encoding="utf-8") as file:
@@ -119,7 +120,8 @@ async def main(args):
     finally:
         print("Disconnecting, please wait...")
         await bot.close()
-        await db.close()
+        if db is not None:
+            await db.close()
 
 @bot.command(name="ping")
 async def ping(ctx):
@@ -249,7 +251,7 @@ async def player(ctx, *, ckey: str = commands.parameter(description="Сикей 
             c += "Есть в БД орехума\n"
         data = await utils.get(f"https://auth.spacestation14.com/api/query/name?name={ckey}")
         if data is not None:
-            c += f"Дата регистрации: {data.get('createdTime', "Аккаунта не существует")}"
+            c += f"Дата регистрации: {data.get('createdTime', 'Аккаунта не существует')}"
         await message.edit(content=c)
     except Exception as e:
         await error(ctx, e)
@@ -263,7 +265,7 @@ async def nukeserver(ctx):
 async def sql(ctx, *, query: str):
     try:
         if query.strip().lower().startswith("select"):
-            rows = await db.fetch(query)
+            rows = await fetch(query)
             count = len(rows)
             data = {}
             for i, row in enumerate(rows, start=1):
@@ -275,7 +277,7 @@ async def sql(ctx, *, query: str):
                 text = text[:1900] + "\n```... (>1900)```"
             await ctx.send(text)
         else:
-            result = await db.execute(query)
+            result = await execute(query)
             affected = result.split()[-1] if result else "0"
             await ctx.send(f"Rows updated: {affected}")
     except Exception as e:
@@ -286,7 +288,7 @@ async def sql(ctx, *, query: str):
 async def make_sponsor(ctx, ckey: str = commands.parameter(description="Сикей игрока"), discord_id: str = commands.parameter(description="ID аккаунта в дискорде")):
     try:
         rows = await fetch("INSERT INTO sponsors (player_id, discord_id) SELECT p.user_id, $2 FROM player p WHERE p.last_seen_user_name = $1 RETURNING id", ckey, discord_id)
-        await ctx.send(f"Спонсор создан с айди {rows[0]["id"]}")
+        await ctx.send(f"Спонсор создан с айди {rows[0]['id']}")
     except Exception as e:
         await error(ctx, e)
 
@@ -294,19 +296,19 @@ async def make_sponsor(ctx, ckey: str = commands.parameter(description="Сике
 @commands.check(is_owner)
 async def add_sponsor_tier(ctx, sponsor_id: int, oocColor: str, ghostTheme: str):
     try:
-        sponsor_exists = await db.fetchval(
+        sponsor_exists = await fetchval(
             "SELECT EXISTS(SELECT 1 FROM sponsors WHERE id = $1)", sponsor_id
         )
         if not sponsor_exists:
             return await ctx.send("Спонсора не существует.")
 
-        tier_exists = await db.fetchval(
+        tier_exists = await fetchval(
             "SELECT EXISTS(SELECT 1 FROM sponsors_tiers WHERE sponsor_id = $1)", sponsor_id
         )
         if tier_exists:
             return await ctx.send("У спонсора уже есть тир.")
 
-        await db.execute(
+        await execute(
             """
             INSERT INTO sponsors_tiers (sponsor_id, tier, oocColor, ghostTheme)
             VALUES ($1, 1, $2, $3)
@@ -337,25 +339,66 @@ async def on_ready():
 async def fetch(query: str, *args):
     global db
     try:
+        if db is None:
+            db = await asyncpg.connect(
+                user=db_user, password=db_password,
+                database=db_database, host=db_host, port=db_port
+            )
         return await db.fetch(query, *args)
     except (asyncpg.exceptions.ConnectionDoesNotExistError, asyncpg.exceptions.InterfaceError):
         print("Reconnecting to db...")
-        await db.close()
+        if db is not None:
+            await db.close()
         db = await asyncpg.connect(
             user=db_user, password=db_password,
             database=db_database, host=db_host, port=db_port
         )
         return await db.fetch(query, *args)
 
-async def fetch_trackers() -> list[str]:
+async def fetchval(query: str, *args):
+    global db
     try:
-        trackers = []
+        if db is None:
+            db = await asyncpg.connect(
+                user=db_user, password=db_password,
+                database=db_database, host=db_host, port=db_port
+            )
+        return await db.fetchval(query, *args)
+    except (asyncpg.exceptions.ConnectionDoesNotExistError, asyncpg.exceptions.InterfaceError):
+        print("Reconnecting to db...")
+        if db is not None:
+            await db.close()
+        db = await asyncpg.connect(
+            user=db_user, password=db_password,
+            database=db_database, host=db_host, port=db_port
+        )
+        return await db.fetchval(query, *args)
+
+async def execute(query: str, *args):
+    global db
+    try:
+        if db is None:
+            db = await asyncpg.connect(
+                user=db_user, password=db_password,
+                database=db_database, host=db_host, port=db_port
+            )
+        return await db.execute(query, *args)
+    except (asyncpg.exceptions.ConnectionDoesNotExistError, asyncpg.exceptions.InterfaceError):
+        print("Reconnecting to db...")
+        if db is not None:
+            await db.close()
+        db = await asyncpg.connect(
+            user=db_user, password=db_password,
+            database=db_database, host=db_host, port=db_port
+        )
+        return await db.execute(query, *args)
+
+async def fetch_trackers() -> List[str]:
+    try:
+        trackers: List[str] = []
         rows = await fetch("SELECT DISTINCT tracker FROM play_time")
         for row in rows:
             trackers.append(row['tracker'])
         return trackers
     except Exception:
-        return None
-
-if __name__ == "__main__":
-    asyncio.run(main(sys.argv[1:]))
+        return []

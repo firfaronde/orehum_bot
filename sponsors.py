@@ -78,7 +78,7 @@ async def fetch(query: str, *args):
         return await db.fetch(query, *args)
     except (asyncpg.exceptions.ConnectionDoesNotExistError, asyncpg.exceptions.InterfaceError):
         print("[Sponsors]Reconnecting to db...")
-        if db is None:
+        if db is not None:
             await db.close()
         db = await asyncpg.connect(
             user=db_user, password=db_password,
