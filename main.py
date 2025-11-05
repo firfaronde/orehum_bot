@@ -230,7 +230,7 @@ async def characters(ctx, *, text: str = commands.parameter(description="Сик�
             job_text = "Роль: Не назначена"
             if best_job:
                 job_text = f"Роль: {best_job[0]['job_name']} (приоритет {best_job[0]['priority']})"
-            msg = f"Раса: {localization.get_specie_name(row['species'])}\nВозраст: {row['age']}\nПол: {localization.get_sex_name(row['sex'])}\nЖизненный путь: {localization.get_lifepath_name(row['lifepath'])}\nНациональность: {row['nationality']}\n\n{row['flavor_text']}\n{job_text}"
+            msg = f"Раса: {localization.get_specie_name(row['species'])}\nВозраст: {row['age']}\nПол: {localization.get_sex_name(row['sex'])}\nЖизненный путь: {localization.get_lifepath_name(row['lifepath'])}\nНациональность: {row['nationality']}\n{job_text}\n\n{row['flavor_text']}"
             if selected == row['slot']:
                 msg = "\n**Выбранный персонаж**\n\n" + msg
             
