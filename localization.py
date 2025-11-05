@@ -17,6 +17,7 @@ async def load():
     species["species-name-thaven"] = "Тавен"
     species["species-name-tajaran"] = "Таяр"
     species["species-name-felinid"] = "Фелинид"
+    species["species-name-feroxi"] = "Ферокси"
     print("Species localization loaded")
     sexes = {}
     sexes["male"] = "Мужской"

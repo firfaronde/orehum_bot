@@ -207,7 +207,7 @@ async def status(ctx):
 @bot.command(name="characters")
 async def characters(ctx, *, text: str = commands.parameter(description="Сикей игрока")):
     """
-    Посмотреть 25 персонажей игрока
+    Посмотреть 10 персонажей игрока
     """
     try:
         rows = await fetch("SELECT pr.* FROM profile pr JOIN preference pref ON pr.preference_id = pref.preference_id JOIN player pl ON pref.user_id = pl.user_id WHERE pl.last_seen_user_name like $1 ORDER BY pr.char_name DESC;", text)
@@ -225,9 +225,15 @@ async def characters(ctx, *, text: str = commands.parameter(description="Сик�
                 title="",
                 color=discord.Color.from_str(row['skin_color'][:7])
             )
-            msg = f"Раса: {localization.get_specie_name(row['species'])}\nВозраст: {row['age']}\nПол: {localization.get_sex_name(row['sex'])}\nЖизненный путь: {localization.get_lifepath_name(row['lifepath'])}\nНациональность: {row['nationality']}\n\n{row['flavor_text']}"
+            best_job = await fetch(
+                "SELECT job_name, priority FROM job WHERE profile_id = $1 ORDER BY priority ASC LIMIT 1;", row['profile_id'])
+            job_text = "Роль: Не назначена"
+            if best_job:
+                job_text = f"Роль: {best_job[0]['job_name']} (приоритет {best_job[0]['priority']})"
+            msg = f"Раса: {localization.get_specie_name(row['species'])}\nВозраст: {row['age']}\nПол: {localization.get_sex_name(row['sex'])}\nЖизненный путь: {localization.get_lifepath_name(row['lifepath'])}\nНациональность: {row['nationality']}\n\n{row['flavor_text']}\n{job_text}"
             if selected == row['slot']:
                 msg = "\n**Выбранный персонаж**\n\n" + msg
+            
             embed.add_field(name=row['char_name'], value=msg)
             embeds.insert(0, embed)
         await ctx.send(embeds=embeds[:10])
