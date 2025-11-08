@@ -226,10 +226,10 @@ async def characters(ctx, *, text: str = commands.parameter(description="Сик�
                 color=discord.Color.from_str(row['skin_color'][:7])
             )
             best_job = await fetch(
-                "SELECT job_name, priority FROM job WHERE profile_id = $1 ORDER BY priority ASC LIMIT 1;", row['profile_id'])
+                "SELECT job_name, priority FROM job WHERE profile_id = $1 ORDER BY priority DESC LIMIT 1;", row['profile_id'])
             job_text = "Роль: Не назначена"
             if best_job:
-                job_text = f"Роль: {best_job[0]['job_name']} (приоритет {best_job[0]['priority']})"
+                job_text = f"Роль: {localization.get_job_name(best_job[0]['job_name'])} (приоритет {best_job[0]['priority']})"
             msg = f"Раса: {localization.get_specie_name(row['species'])}\nВозраст: {row['age']}\nПол: {localization.get_sex_name(row['sex'])}\nЖизненный путь: {localization.get_lifepath_name(row['lifepath'])}\nНациональность: {row['nationality']}\n{job_text}\n\n{row['flavor_text']}"
             if selected == row['slot']:
                 msg = "\n**Выбранный персонаж**\n\n" + msg
