@@ -328,6 +328,14 @@ async def add_sponsor_tier(ctx, sponsor_id: int, oocColor: str, ghostTheme: str)
     except Exception as e:
         await error(ctx, e)
 
+@bot.event
+async def on_command_error(ctx, error):
+    if isinstance(error, commands.CheckFailure):
+        await ctx.send("Чеки не пройдены. Возможно, вы не админ.")
+        return
+
+    raise error
+
 async def error(ctx, error: Exception):
     print("Error: " + str(error))
     try:

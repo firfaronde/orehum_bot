@@ -1,4 +1,7 @@
 bot.json
+bot.pid
+run.sh
+logs/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
