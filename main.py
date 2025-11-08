@@ -234,7 +234,7 @@ async def characters(ctx, *, text: str = commands.parameter(description="Сик�
             if selected == row['slot']:
                 msg = "\n**Выбранный персонаж**\n\n" + msg
             
-            embed.add_field(name=row['char_name'], value=msg[:2000])
+            embed.add_field(name=row['char_name'], value=msg[:1024])
             embeds.insert(0, embed)
         await ctx.send(embeds=embeds[:10])
     except Exception as e:
