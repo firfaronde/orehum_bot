@@ -281,7 +281,7 @@ async def sql(ctx, *, query: str):
 
             text = f"Rows returned: {count}\n```json\n{json.dumps(data, indent=2, ensure_ascii=False)}```"
             if len(text) > 1900:
-                text = text[:1900] + "\n```... (>1900)```"
+                text = text[:1900] + "\n```... Truncated"
             await ctx.send(text)
         else:
             result = await execute(query)
