@@ -157,7 +157,7 @@ async def playtime(ctx, *, text: str = commands.parameter(description="Сике�
     """
     try:
         rows = await fetch(
-            "SELECT pt.* FROM player p JOIN play_time pt ON pt.player_id = p.user_id WHERE p.last_seen_user_name like $1 ORDER BY pt.time_spent DESC LIMIT 10",
+            "SELECT pt.* FROM player p JOIN play_time pt ON pt.player_id = p.user_id WHERE p.last_seen_user_name = $1 ORDER BY pt.time_spent DESC LIMIT 10",
             text
         )
         if not rows:
@@ -210,11 +210,11 @@ async def characters(ctx, *, text: str = commands.parameter(description="Сик�
     Посмотреть 10 персонажей игрока
     """
     try:
-        rows = await fetch("SELECT pr.* FROM profile pr JOIN preference pref ON pr.preference_id = pref.preference_id JOIN player pl ON pref.user_id = pl.user_id WHERE pl.last_seen_user_name like $1 ORDER BY pr.char_name DESC;", text)
+        rows = await fetch("SELECT pr.* FROM profile pr JOIN preference pref ON pr.preference_id = pref.preference_id JOIN player pl ON pref.user_id = pl.user_id WHERE pl.last_seen_user_name = $1 ORDER BY pr.char_name DESC;", text)
         if not rows:
             await ctx.send("Игрок не найден!")
             return
-        rows2 = await fetch("SELECT pref.selected_character_slot, pref.* FROM preference pref JOIN player pl ON pref.user_id = pl.user_id WHERE pl.last_seen_user_name like $1;", text)
+        rows2 = await fetch("SELECT pref.selected_character_slot, pref.* FROM preference pref JOIN player pl ON pref.user_id = pl.user_id WHERE pl.last_seen_user_name = $1;", text)
         if not rows2:
             await ctx.send("Выбранный персонаж игрока не найден...")
             return
