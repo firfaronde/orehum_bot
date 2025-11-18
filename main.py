@@ -157,7 +157,7 @@ async def playtime(ctx, *, text: str = commands.parameter(description="Сике�
     """
     try:
         rows = await fetch(
-            "SELECT pt.* FROM player p JOIN play_time pt ON pt.player_id = p.user_id WHERE p.last_seen_user_name = $1 ORDER BY pt.time_spent DESC LIMIT 10",
+            "SELECT pt.* FROM player p JOIN play_time pt ON pt.player_id = p.user_id WHERE p.last_seen_user_name = $1 ORDER BY pt.time_spent DESC LIMIT 15",
             text
         )
         if not rows:
